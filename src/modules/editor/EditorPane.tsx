@@ -1,3 +1,5 @@
+import { isImagePath } from "./lib/imageUtils";
+import { ImagePane } from "./ImagePane";
 import { redo, undo } from "@codemirror/commands";
 import {
   findNext,
@@ -52,6 +54,7 @@ type Props = {
   onDirtyChange?: (dirty: boolean) => void;
   onSaved?: () => void;
   onClose?: () => void;
+  onOpenSource?: (path: string) => void;
 };
 
 function formatBytes(n: number): string {
@@ -61,7 +64,7 @@ function formatBytes(n: number): string {
 }
 
 export const EditorPane = forwardRef<EditorPaneHandle, Props>(
-  function EditorPane({ path, onDirtyChange, onSaved, onClose }, ref) {
+  function EditorPane({ path, onDirtyChange, onSaved, onClose, onOpenSource }, ref) {
     const { doc, onChange, save, reload } = useDocument({ path, onDirtyChange });
     const reloadRef = useRef(reload);
     reloadRef.current = reload;
@@ -282,6 +285,11 @@ export const EditorPane = forwardRef<EditorPaneHandle, Props>(
       );
     }
     if (doc.status === "binary") {
+      if (isImagePath(path)) {
+        return (
+          <ImagePane path={path} size={doc.size} onOpenSource={onOpenSource} />
+        );
+      }
       return (
         <div className="flex h-full flex-col items-center justify-center gap-1 px-6 text-center">
           <div className="text-sm text-foreground">Binary file</div>

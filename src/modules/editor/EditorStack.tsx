@@ -9,6 +9,7 @@ type Props = {
   onDirtyChange: (id: number, dirty: boolean) => void;
   registerHandle: (id: number, handle: EditorPaneHandle | null) => void;
   onCloseTab: (id: number) => void;
+  onOpenSource?: (path: string) => void;
 };
 
 export function EditorStack({
@@ -17,6 +18,7 @@ export function EditorStack({
   onDirtyChange,
   registerHandle,
   onCloseTab,
+  onOpenSource,
 }: Props) {
   const editors = tabs.filter((t): t is EditorTab => t.kind === "editor");
 
@@ -27,6 +29,7 @@ export function EditorStack({
   const registerRef = useRef(registerHandle);
   const dirtyRef = useRef(onDirtyChange);
   const closeRef = useRef(onCloseTab);
+  const openSourceRef = useRef(onOpenSource);
   useEffect(() => {
     registerRef.current = registerHandle;
   }, [registerHandle]);
@@ -36,12 +39,18 @@ export function EditorStack({
   useEffect(() => {
     closeRef.current = onCloseTab;
   }, [onCloseTab]);
+  useEffect(() => {
+    openSourceRef.current = onOpenSource;
+  }, [onOpenSource]);
 
   const refCallbacks = useRef(
     new Map<number, (h: EditorPaneHandle | null) => void>(),
   );
   const dirtyCallbacks = useRef(new Map<number, (dirty: boolean) => void>());
   const closeCallbacks = useRef(new Map<number, () => void>());
+  const openSourceCallback = useRef<(path: string) => void>(
+    (p) => openSourceRef.current?.(p),
+  );
 
   const getRefCallback = (id: number) => {
     let cb = refCallbacks.current.get(id);
@@ -102,6 +111,7 @@ export function EditorStack({
                 path={t.path}
                 onDirtyChange={getDirtyCallback(t.id)}
                 onClose={getCloseCallback(t.id)}
+                onOpenSource={openSourceCallback.current}
               />
             </div>
           </div>

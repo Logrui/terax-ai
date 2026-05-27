@@ -1314,6 +1314,7 @@ export default function App() {
           registerHandle={registerEditorHandle}
           onDirtyChange={handleEditorDirty}
           onCloseTab={disposeTab}
+          onOpenSource={openFileTab}
         />
       </div>
       <div
