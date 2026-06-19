@@ -20,7 +20,8 @@
         "minHeight": 280,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
-        "visible": false
+        "visible": false,
+        "transparent": true
       }
     ],
     "security": {
@@ -68,7 +69,7 @@
         "type": "downloadBootstrapper"
       },
       "nsis": {
-        "installMode": "currentUser",
+        "installMode": "perMachine",
         "languages": ["English"],
         "displayLanguageSelector": false,
         "installerIcon": "icons/icon.ico",

@@ -1,15 +1,9 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "app": {
-    "windows": [
-      {
-        "label": "main",
-        "title": "Terax",
-        "decorations": false,
-        "transparent": true,
-        "visible": false,
-        "shadow": false
-      }
-    ]
+  "bundle": {
+    "resources": {
+      "shell_ext_dist/terax_shell_ext.dll": "terax_shell_ext.dll",
+      "shell_ext_dist/terax_shell_ext.appx": "terax_shell_ext.appx",
+      "shell_ext_dist/terax_cert.cer": "terax_cert.cer"
+    }
   }
 }

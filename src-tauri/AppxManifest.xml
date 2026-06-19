@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
+  xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
+  xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  IgnorableNamespaces="uap uap10 rescap desktop4 desktop5 desktop6 com">
+
+  <!-- Publisher CN must match the signing certificate subject exactly. -->
+  <Identity
+    Name="app.crynta.terax"
+    Publisher="CN=Terax"
+    Version="1.0.0.0" />
+
+  <Properties>
+    <DisplayName>Terax</DisplayName>
+    <PublisherDisplayName>Crynta</PublisherDisplayName>
+    <Logo>resources\Square150x150Logo.png</Logo>
+    <!-- Allow the DLL and exe to live outside the APPX (in $INSTDIR). -->
+    <uap10:AllowExternalContent>true</uap10:AllowExternalContent>
+    <!-- Let the COM surrogate write directly to the registry and filesystem. -->
+    <desktop6:RegistryWriteVirtualization>disabled</desktop6:RegistryWriteVirtualization>
+    <desktop6:FileSystemWriteVirtualization>disabled</desktop6:FileSystemWriteVirtualization>
+  </Properties>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <!-- Requires Windows 11 (22000+); that is the minimum for modern context menus. -->
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.22000.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+    <rescap:Capability Name="unvirtualizedResources" />
+  </Capabilities>
+
+  <Applications>
+    <Application Id="Terax"
+      Executable="terax.exe"
+      uap10:TrustLevel="mediumIL"
+      uap10:RuntimeBehavior="win32App">
+      <!-- AppListEntry=none keeps this off the Start menu — it is purely a shell extension. -->
+      <uap:VisualElements
+        AppListEntry="none"
+        DisplayName="Terax"
+        Description="Terax Windows 11 context menu handler"
+        BackgroundColor="transparent"
+        Square150x150Logo="resources\Square150x150Logo.png"
+        Square44x44Logo="resources\Square44x44Logo.png">
+      </uap:VisualElements>
+      <Extensions>
+        <!-- Register "Open in Terax" on folders and folder backgrounds. -->
+        <desktop4:Extension Category="windows.fileExplorerContextMenus">
+          <desktop4:FileExplorerContextMenus>
+            <desktop5:ItemType Type="Directory">
+              <desktop5:Verb Id="OpenInTerax" Clsid="8b6e4c2a-1f3d-4e7b-9a5c-0d2e4f6a8b0c" />
+            </desktop5:ItemType>
+            <desktop5:ItemType Type="Directory\Background">
+              <desktop5:Verb Id="OpenInTerax" Clsid="8b6e4c2a-1f3d-4e7b-9a5c-0d2e4f6a8b0c" />
+            </desktop5:ItemType>
+          </desktop4:FileExplorerContextMenus>
+        </desktop4:Extension>
+        <!-- Register the COM surrogate DLL that implements IExplorerCommand. -->
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:SurrogateServer DisplayName="Terax">
+              <!-- Path is relative to ExternalLocation ($INSTDIR) at install time. -->
+              <com:Class Id="8b6e4c2a-1f3d-4e7b-9a5c-0d2e4f6a8b0c" Path="terax_shell_ext.dll" ThreadingModel="STA" />
+            </com:SurrogateServer>
+          </com:ComServer>
+        </com:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+</Package>

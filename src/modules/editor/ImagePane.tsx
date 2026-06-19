@@ -1,4 +1,4 @@
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +29,7 @@ function isSvg(path: string): boolean {
 }
 
 export function ImagePane({ path, size, onOpenSource }: Props) {
-  const src = convertFileSrc(path);
+  const [src, setSrc] = useState<string | null>(null);
   const [dims, setDims] = useState<Dims | null>(null);
   const [scale, setScale] = useState(1);
   const [error, setError] = useState(false);
@@ -71,11 +71,14 @@ export function ImagePane({ path, size, onOpenSource }: Props) {
     [],
   );
 
-  // Reset state when path changes.
   useEffect(() => {
+    setSrc(null);
     setDims(null);
     setScale(1);
     setError(false);
+    invoke<string>("fs_read_image", { path })
+      .then(setSrc)
+      .catch(() => setError(true));
   }, [path]);
 
   const name = basename(path);
@@ -104,7 +107,7 @@ export function ImagePane({ path, size, onOpenSource }: Props) {
             <div className="text-sm text-foreground">Failed to load image</div>
             <div className="text-xs text-muted-foreground">{name}</div>
           </div>
-        ) : (
+        ) : src ? (
           <img
             src={src}
             alt={name}
@@ -121,7 +124,7 @@ export function ImagePane({ path, size, onOpenSource }: Props) {
                 : undefined
             }
           />
-        )}
+        ) : null}
       </div>
 
       <div className="flex h-7 shrink-0 items-center gap-3 border-t border-border/60 bg-card/60 px-3 text-[11px] text-muted-foreground">

@@ -1,6 +1,7 @@
 use std::path::Path;
 use std::time::UNIX_EPOCH;
 use std::{fs, io::Write};
+use base64::Engine as _;
 
 use serde::Serialize;
 use tauri::Emitter;
@@ -76,6 +77,37 @@ pub fn fs_read_file(path: String, workspace: Option<WorkspaceEnv>) -> Result<Rea
         Ok(content) => Ok(ReadResult::Text { content, size }),
         Err(_) => Ok(ReadResult::Binary { size }),
     }
+}
+
+const MAX_IMAGE_BYTES: u64 = 20 * 1024 * 1024; // 20 MB
+
+fn mime_for_image_ext(ext: &str) -> &'static str {
+    match ext.to_lowercase().as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "svg" => "image/svg+xml",
+        "ico" => "image/x-icon",
+        "bmp" => "image/bmp",
+        "avif" => "image/avif",
+        _ => "application/octet-stream",
+    }
+}
+
+#[tauri::command]
+pub fn fs_read_image(path: String, workspace: Option<WorkspaceEnv>) -> Result<String, String> {
+    let workspace = WorkspaceEnv::from_option(workspace);
+    let p = resolve_path(&path, &workspace);
+    let ext = p.extension().and_then(|e| e.to_str()).unwrap_or("");
+    let mime = mime_for_image_ext(ext);
+    let size = std::fs::metadata(&p).map_err(|e| e.to_string())?.len();
+    if size > MAX_IMAGE_BYTES {
+        return Err(format!("image too large ({size} bytes)"));
+    }
+    let bytes = std::fs::read(&p).map_err(|e| e.to_string())?;
+    let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    Ok(format!("data:{mime};base64,{b64}"))
 }
 
 #[derive(Serialize, Clone)]

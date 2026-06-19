@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import { IncognitoIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { usePreferencesStore } from "@/modules/settings/preferences";
 import { CwdBreadcrumb } from "./CwdBreadcrumb";
 import { WorkspaceEnvSelector } from "./WorkspaceEnvSelector";
 import type { WorkspaceEnv } from "@/modules/workspace";
@@ -22,6 +23,7 @@ type Props = {
   onCd: (path: string) => void;
   onWorkspaceChange: (env: WorkspaceEnv) => void;
   onOpenMini: () => void;
+  onToggleFavorite: (path: string) => void;
   /** Only rendered when the AI panel is open and a key is loaded. */
   hasComposer: boolean;
   privateActive: boolean;
@@ -34,9 +36,12 @@ export function StatusBar({
   onCd,
   onWorkspaceChange,
   onOpenMini,
+  onToggleFavorite,
   hasComposer,
   privateActive,
 }: Props) {
+  const recentWorkspaces = usePreferencesStore((s) => s.recentWorkspaces);
+  const favoriteWorkspaces = usePreferencesStore((s) => s.favoriteWorkspaces);
   const panelOpen = useChatStore((s) => s.panelOpen);
   const openPanel = useChatStore((s) => s.openPanel);
 
@@ -44,7 +49,15 @@ export function StatusBar({
     <footer className="flex h-8 shrink-0 items-center justify-between gap-3 border-t border-border/60 bg-card/60 px-3 text-[11px]">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <WorkspaceEnvSelector onSelect={onWorkspaceChange} />
-        <CwdBreadcrumb cwd={cwd} filePath={filePath} home={home} onCd={onCd} />
+        <CwdBreadcrumb
+          cwd={cwd}
+          filePath={filePath}
+          home={home}
+          onCd={onCd}
+          recentWorkspaces={recentWorkspaces}
+          favoriteWorkspaces={favoriteWorkspaces}
+          onToggleFavorite={onToggleFavorite}
+        />
         {privateActive ? (
           <Tooltip>
             <TooltipTrigger asChild>

@@ -8,3 +8,5 @@ export {
   type WorkspaceEnv,
   type WslDistro,
 } from "./env";
+
+export { WorkspacePicker } from "./WorkspacePicker";

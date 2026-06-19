@@ -30,7 +30,8 @@ export type ShortcutId =
   | "settings.open"
   | "sidebar.toggle"
   | "editor.undo"
-  | "editor.redo";
+  | "editor.redo"
+  | "workspace.openRecent";
 
 export type ShortcutGroup =
   | "General"
@@ -69,6 +70,12 @@ export const SHORTCUTS: Shortcut[] = [
     label: "Show keyboard shortcuts",
     group: "General",
     defaultBindings: [{ [MOD_PROP]: true, key: "k" }],
+  },
+  {
+    id: "workspace.openRecent",
+    label: "Open recent workspace",
+    group: "General",
+    defaultBindings: [{ ctrl: true, shift: true, key: "r" }],
   },
   {
     id: "tab.new",

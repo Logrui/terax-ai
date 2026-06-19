@@ -46,7 +46,8 @@ import {
   GitHistoryStack,
   type GitHistorySearchHandle,
 } from "@/modules/git-history";
-import { getLaunchDir } from "@/lib/launchDir";
+import { getLaunchDir, hadCliArg } from "@/lib/launchDir";
+import { addToRecents, toggleFavorite } from "@/lib/workspaceHistory";
 import { quoteShellArg } from "@/lib/shellQuote";
 import { useZoom } from "@/lib/useZoom";
 import { FileExplorer, type FileExplorerHandle } from "@/modules/explorer";
@@ -65,7 +66,12 @@ import { MarkdownStack } from "@/modules/markdown";
 import { PreviewStack, type PreviewPaneHandle } from "@/modules/preview";
 import { openSettingsWindow } from "@/modules/settings/openSettingsWindow";
 import { usePreferencesStore } from "@/modules/settings/preferences";
-import { onKeysChanged, setThemeId as persistThemeId } from "@/modules/settings/store";
+import {
+  onKeysChanged,
+  setFavoriteWorkspaces,
+  setRecentWorkspaces,
+  setThemeId as persistThemeId,
+} from "@/modules/settings/store";
 import {
   ShortcutsDialog,
   useGlobalShortcuts,
@@ -106,6 +112,7 @@ import {
   getWslHome,
   LOCAL_WORKSPACE,
   useWorkspaceEnvStore,
+  WorkspacePicker,
   type WorkspaceEnv,
 } from "@/modules/workspace";
 import { invoke } from "@tauri-apps/api/core";
@@ -607,6 +614,47 @@ export default function App() {
     launchCwd ?? home,
   );
 
+  const recentWorkspaces = usePreferencesStore((s) => s.recentWorkspaces);
+  const lastQuitClean = usePreferencesStore((s) => s.lastQuitClean);
+  const favoriteWorkspaces = usePreferencesStore((s) => s.favoriteWorkspaces);
+  const [pickerDismissed, setPickerDismissed] = useState(false);
+
+  const showPicker =
+    !hadCliArg() &&
+    !pickerDismissed &&
+    (recentWorkspaces.length > 0 || favoriteWorkspaces.length > 0);
+
+  useEffect(() => {
+    if (!explorerRoot) return;
+    if (favoriteWorkspaces.includes(explorerRoot)) {
+      // Favorited path visited -- move to front of favorites list
+      const updated = [explorerRoot, ...favoriteWorkspaces.filter((p) => p !== explorerRoot)];
+      if (updated[0] !== favoriteWorkspaces[0] || updated.length !== favoriteWorkspaces.length) {
+        void setFavoriteWorkspaces(updated);
+      }
+    } else {
+      const updated = addToRecents(recentWorkspaces, explorerRoot);
+      if (updated[0] !== recentWorkspaces[0] || updated.length !== recentWorkspaces.length) {
+        void setRecentWorkspaces(updated);
+      }
+    }
+    // store arrays intentionally omitted -- only run when explorerRoot changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [explorerRoot]);
+
+  const handleToggleFavorite = useCallback(
+    (path: string) => {
+      const { favorites, recents } = toggleFavorite(
+        favoriteWorkspaces,
+        recentWorkspaces,
+        path,
+      );
+      void setFavoriteWorkspaces(favorites);
+      void setRecentWorkspaces(recents);
+    },
+    [favoriteWorkspaces, recentWorkspaces],
+  );
+
   useEffect(() => {
     setActiveSearchAddon(
       activeLeafId !== null ? (searchAddons.current.get(activeLeafId) ?? null) : null,
@@ -1039,6 +1087,11 @@ export default function App() {
       "view.zoomReset": zoomReset,
       "editor.undo": () => editorRefs.current.get(activeId)?.undo(),
       "editor.redo": () => editorRefs.current.get(activeId)?.redo(),
+      "workspace.openRecent": () => {
+        if (recentWorkspaces.length > 0 || favoriteWorkspaces.length > 0) {
+          setPickerDismissed(false);
+        }
+      },
     }),
     [
       activeId,
@@ -1058,6 +1111,8 @@ export default function App() {
       zoomIn,
       zoomOut,
       zoomReset,
+      recentWorkspaces,
+      favoriteWorkspaces,
     ],
   );
 
@@ -1494,6 +1549,7 @@ export default function App() {
             onCd={sendCd}
             onWorkspaceChange={switchWorkspace}
             onOpenMini={openMini}
+            onToggleFavorite={handleToggleFavorite}
             hasComposer={hasComposer}
             privateActive={
               activeTab?.kind === "terminal" && activeTab.private === true
@@ -1600,6 +1656,20 @@ export default function App() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          {showPicker && (
+            <WorkspacePicker
+              workspaces={recentWorkspaces}
+              favoriteWorkspaces={favoriteWorkspaces}
+              preSelectFirst={lastQuitClean}
+              onSelect={(path) => {
+                setPickerDismissed(true);
+                newTab(path);
+              }}
+              onDismiss={() => setPickerDismissed(true)}
+              onToggleFavorite={handleToggleFavorite}
+            />
+          )}
         </div>
       </TooltipProvider>
     </ThemeProvider>

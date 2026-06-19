@@ -85,6 +85,9 @@ export type Preferences = {
   zoomLevel: number;
   agentNotifications: boolean;
   shortcuts: Record<ShortcutId, KeyBinding[]>;
+  recentWorkspaces: string[];
+  lastQuitClean: boolean;
+  favoriteWorkspaces: string[];
 };
 
 const STORE_PATH = "terax-settings.json";
@@ -126,6 +129,9 @@ const KEY_LAST_WSL_DISTRO = "lastWslDistro";
 const KEY_ZOOM_LEVEL = "zoomLevel";
 const KEY_AGENT_NOTIFICATIONS = "agentNotifications";
 const KEY_SHORTCUTS = "shortcuts";
+const KEY_RECENT_WORKSPACES = "recentWorkspaces";
+const KEY_LAST_QUIT_CLEAN = "lastQuitClean";
+const KEY_FAVORITE_WORKSPACES = "favoriteWorkspaces";
 
 export const TERMINAL_FONT_SIZE_DEFAULT = 14;
 export const TERMINAL_FONT_SIZE_MIN = 8;
@@ -180,6 +186,9 @@ export const DEFAULT_PREFERENCES: Preferences = {
   zoomLevel: 1.0,
   agentNotifications: true,
   shortcuts: {} as Record<ShortcutId, KeyBinding[]>,
+  recentWorkspaces: [],
+  lastQuitClean: false,
+  favoriteWorkspaces: [],
 };
 
 const store = new LazyStore(STORE_PATH, { defaults: {}, autoSave: 200 });
@@ -302,6 +311,12 @@ export async function loadPreferences(): Promise<Preferences> {
     shortcuts:
       get<Record<ShortcutId, KeyBinding[]>>(KEY_SHORTCUTS) ??
       DEFAULT_PREFERENCES.shortcuts,
+    recentWorkspaces:
+      get<string[]>(KEY_RECENT_WORKSPACES) ?? DEFAULT_PREFERENCES.recentWorkspaces,
+    lastQuitClean:
+      get<boolean>(KEY_LAST_QUIT_CLEAN) ?? DEFAULT_PREFERENCES.lastQuitClean,
+    favoriteWorkspaces:
+      get<string[]>(KEY_FAVORITE_WORKSPACES) ?? DEFAULT_PREFERENCES.favoriteWorkspaces,
   };
 }
 
@@ -496,6 +511,18 @@ export async function resetShortcuts(): Promise<void> {
   await writePref(KEY_SHORTCUTS, DEFAULT_PREFERENCES.shortcuts);
 }
 
+export async function setRecentWorkspaces(value: string[]): Promise<void> {
+  await writePref(KEY_RECENT_WORKSPACES, value);
+}
+
+export async function setLastQuitClean(value: boolean): Promise<void> {
+  await writePref(KEY_LAST_QUIT_CLEAN, value);
+}
+
+export async function setFavoriteWorkspaces(value: string[]): Promise<void> {
+  await writePref(KEY_FAVORITE_WORKSPACES, value);
+}
+
 export type PrefKey = keyof Preferences;
 
 /** Subscribe to changes from any window (settings → main). */
@@ -540,6 +567,9 @@ export async function onPreferencesChange(
     [KEY_ZOOM_LEVEL]: "zoomLevel",
     [KEY_AGENT_NOTIFICATIONS]: "agentNotifications",
     [KEY_SHORTCUTS]: "shortcuts",
+    [KEY_RECENT_WORKSPACES]: "recentWorkspaces",
+    [KEY_LAST_QUIT_CLEAN]: "lastQuitClean",
+    [KEY_FAVORITE_WORKSPACES]: "favoriteWorkspaces",
   };
   // Same-process writes still fire onChange immediately; cross-window writes
   // arrive via the Tauri event emitted by writePref().

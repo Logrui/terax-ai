@@ -109,6 +109,17 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            // macOS uses titleBarStyle:Overlay with native traffic lights -- no
+            // changes needed. On Windows/Linux we remove native chrome so the
+            // borderless CSS frame takes over. transparent:true is set in
+            // tauri.conf.json so WebView2/WebKitGTK don't paint a white surface.
+            #[cfg(any(target_os = "windows", target_os = "linux"))]
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_decorations(false);
+            }
+            Ok(())
+        })
         .manage(pty::PtyState::default())
         .manage(shell::ShellState::default())
         .manage(secrets::SecretsState::default())
@@ -131,6 +142,7 @@ pub fn run() {
             fs::tree::list_subdirs,
             fs::tree::fs_read_dir,
             fs::file::fs_read_file,
+            fs::file::fs_read_image,
             fs::file::fs_write_file,
             fs::file::fs_stat,
             fs::file::fs_canonicalize,

@@ -10,6 +10,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import ReactDOM from "react-dom/client";
 import App from "./app/App";
 import { initLaunchDir } from "./lib/launchDir";
+import { setLastQuitClean } from "./modules/settings/store";
 import { USE_CUSTOM_WINDOW_CONTROLS } from "./lib/platform";
 
 if (USE_CUSTOM_WINDOW_CONTROLS) {
@@ -21,6 +22,14 @@ await invoke("pty_close_all").catch(() => {});
 
 // Seed before first paint so default tab mounts at target cwd (no flicker).
 await initLaunchDir();
+
+// Mark session unclean at boot; set to true on normal exit via beforeunload.
+// If the process is force-killed this stays false, so the workspace picker
+// won't pre-select anything on the next launch.
+void setLastQuitClean(false);
+window.addEventListener("beforeunload", () => {
+  void setLastQuitClean(true);
+});
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <App />,

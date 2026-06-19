@@ -11,6 +11,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -18,8 +19,11 @@ import {
   Folder01Icon,
   Home03Icon,
   MoreHorizontalIcon,
+  StarIcon,
+  StarOffIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { cn } from "@/lib/utils";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
 import { currentWorkspaceEnv } from "@/modules/workspace";
@@ -31,6 +35,9 @@ type Props = {
   filePath?: string | null;
   home: string | null;
   onCd: (path: string) => void;
+  recentWorkspaces?: string[];
+  favoriteWorkspaces?: string[];
+  onToggleFavorite?: (path: string) => void;
 };
 
 function dirname(path: string): string {
@@ -44,7 +51,7 @@ function basename(path: string): string {
   return i === -1 ? path : path.slice(i + 1);
 }
 
-export function CwdBreadcrumb({ cwd, filePath, home, onCd }: Props) {
+export function CwdBreadcrumb({ cwd, filePath, home, onCd, recentWorkspaces, favoriteWorkspaces, onToggleFavorite }: Props) {
   // File mode: dir segments navigate; filename is the terminal leaf.
   if (filePath) {
     const dir = dirname(filePath);
@@ -124,6 +131,9 @@ export function CwdBreadcrumb({ cwd, filePath, home, onCd }: Props) {
             label={current.label}
             path={current.fullPath}
             onCd={onCd}
+            recentWorkspaces={recentWorkspaces}
+            favoriteWorkspaces={favoriteWorkspaces}
+            onToggleFavorite={onToggleFavorite}
           />
         </BreadcrumbItem>
       </BreadcrumbList>
@@ -174,10 +184,16 @@ function CurrentSegmentDropdown({
   label,
   path,
   onCd,
+  recentWorkspaces,
+  favoriteWorkspaces,
+  onToggleFavorite,
 }: {
   label: string;
   path: string;
   onCd: (p: string) => void;
+  recentWorkspaces?: string[];
+  favoriteWorkspaces?: string[];
+  onToggleFavorite?: (path: string) => void;
 }) {
   const showHidden = usePreferencesStore((s) => s.showHidden);
   const [open, setOpen] = useState(false);
@@ -251,6 +267,90 @@ function CurrentSegmentDropdown({
               {name}
             </DropdownMenuItem>
           ))
+        )}
+        {(favoriteWorkspaces?.length ?? 0) > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <div className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground">
+              <HugeiconsIcon
+                icon={StarIcon}
+                className="size-3 fill-amber-400 text-amber-400"
+                strokeWidth={0}
+              />
+              Pinned
+            </div>
+            {favoriteWorkspaces!.map((p) => (
+              <DropdownMenuItem
+                key={p}
+                className="group"
+                onSelect={() => onCd(p)}
+              >
+                <HugeiconsIcon
+                  icon={Folder01Icon}
+                  className="size-3.5 text-muted-foreground"
+                  strokeWidth={1.75}
+                />
+                <span className="truncate font-medium">{basename(p)}</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onToggleFavorite?.(p);
+                  }}
+                  className={cn(
+                    "ml-auto shrink-0 rounded p-0.5 text-amber-400 transition-opacity",
+                    "opacity-100 hover:text-amber-300",
+                  )}
+                  title="Remove from pinned"
+                >
+                  <HugeiconsIcon
+                    icon={StarIcon}
+                    className="size-3 fill-amber-400"
+                    strokeWidth={0}
+                  />
+                </button>
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
+        {recentWorkspaces && recentWorkspaces.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <div className="px-2 py-1 text-xs text-muted-foreground">
+              Recent
+            </div>
+            {recentWorkspaces.map((p) => (
+              <DropdownMenuItem
+                key={p}
+                className="group"
+                onSelect={() => onCd(p)}
+              >
+                <HugeiconsIcon
+                  icon={Folder01Icon}
+                  className="size-3.5 text-muted-foreground"
+                  strokeWidth={1.75}
+                />
+                <span className="truncate font-medium">{basename(p)}</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onToggleFavorite?.(p);
+                  }}
+                  className="ml-auto shrink-0 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+                  title="Pin workspace"
+                >
+                  <HugeiconsIcon
+                    icon={StarOffIcon}
+                    className="size-3"
+                    strokeWidth={1.75}
+                  />
+                </button>
+              </DropdownMenuItem>
+            ))}
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>
